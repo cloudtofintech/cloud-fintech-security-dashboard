@@ -214,4 +214,4 @@ elif page.startswith("4"):
     with r:
         c1, c2 = st.columns(2)
         with c1:
-            st.write("**Snowflake strength**
+            st.write("**Snowflake strength**")
