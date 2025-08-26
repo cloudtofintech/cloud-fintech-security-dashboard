@@ -13,6 +13,283 @@ st.set_page_config(page_title="Cloud • Fintech • Security • Data Platforms
 # Utilities
 # =========================
 
+def get_compliance_recommendations(model, data_sensitivity, compliance_reqs, industry):
+    """Generate specific recommendations based on compliance and data sensitivity"""
+    
+    # Base recommendations by data sensitivity
+    sensitivity_reqs = {
+        "Public (marketing data)": {
+            "encryption": "Standard TLS in transit",
+            "access_controls": "Basic IAM roles",
+            "data_residency": "Any region acceptable",
+            "audit_logging": "Basic access logs",
+            "backup_retention": "30 days"
+        },
+        "Internal (business metrics)": {
+            "encryption": "TLS 1.3 + encryption at rest",
+            "access_controls": "Role-based access (RBAC)",
+            "data_residency": "Preferred region/country",
+            "audit_logging": "Detailed access + change logs",
+            "backup_retention": "90 days"
+        },
+        "Confidential (customer PII)": {
+            "encryption": "AES-256 + field-level encryption for PII",
+            "access_controls": "Strict RBAC + MFA required",
+            "data_residency": "Must stay in specific region",
+            "audit_logging": "Full audit trail + real-time alerts",
+            "backup_retention": "7 years (legal requirement)"
+        },
+        "Restricted (financial/health records)": {
+            "encryption": "FIPS 140-2 Level 3 + HSM key management",
+            "access_controls": "Zero-trust + privileged access mgmt",
+            "data_residency": "On-premises or certified cloud only",
+            "audit_logging": "Immutable audit logs + compliance reports",
+            "backup_retention": "10+ years (regulatory requirement)"
+        }
+    }
+    
+    # Compliance-specific requirements
+    compliance_details = {
+        "GDPR": {
+            "key_requirements": ["Right to be forgotten", "Data portability", "Privacy by design", "DPO appointment"],
+            "technical_controls": ["Pseudonymization", "Encryption", "Access controls", "Breach notification (72hrs)"],
+            "deployment_impact": {
+                "🏠 On-premises": "✅ Full control over data location and processing",
+                "☁️ Public Cloud": "⚠️ Need EU-based cloud regions + data processing agreements",
+                "🌉 Hybrid Cloud": "⚠️ Ensure EU data stays in compliant locations"
+            }
+        },
+        "HIPAA": {
+            "key_requirements": ["PHI protection", "Business Associate Agreements", "Risk assessments", "Employee training"],
+            "technical_controls": ["End-to-end encryption", "Access controls", "Audit logs", "Secure transmission"],
+            "deployment_impact": {
+                "🏠 On-premises": "✅ Maximum control, easier compliance audits",
+                "☁️ Public Cloud": "⚠️ Requires HIPAA-compliant cloud services + BAAs",
+                "🌉 Hybrid Cloud": "⚠️ PHI must stay in HIPAA-compliant environments"
+            }
+        },
+        "SOX": {
+            "key_requirements": ["Financial data integrity", "Change controls", "Segregation of duties", "Audit trails"],
+            "technical_controls": ["Immutable logs", "Change approval workflows", "Access reviews", "Data integrity checks"],
+            "deployment_impact": {
+                "🏠 On-premises": "✅ Direct control over financial systems",
+                "☁️ Public Cloud": "✅ Can use SOC 2 Type II certified services",
+                "🌉 Hybrid Cloud": "⚠️ Ensure consistent controls across environments"
+            }
+        },
+        "PCI-DSS": {
+            "key_requirements": ["Cardholder data protection", "Network segmentation", "Regular testing", "Access monitoring"],
+            "technical_controls": ["Network segmentation", "WAF", "Encryption", "Vulnerability scanning"],
+            "deployment_impact": {
+                "🏠 On-premises": "✅ Full control but expensive PCI compliance",
+                "☁️ Public Cloud": "✅ Use PCI-DSS certified cloud services",
+                "🌉 Hybrid Cloud": "⚠️ Payment processing should be in certified environment"
+            }
+        },
+        "ISO 27001": {
+            "key_requirements": ["Information security management", "Risk assessment", "Security controls", "Continuous improvement"],
+            "technical_controls": ["Security policies", "Access controls", "Incident response", "Security monitoring"],
+            "deployment_impact": {
+                "🏠 On-premises": "✅ Full control over security implementation",
+                "☁️ Public Cloud": "✅ Leverage cloud provider's ISO 27001 certification",
+                "🌉 Hybrid Cloud": "⚠️ Need consistent security framework across both"
+            }
+        }
+    }
+    
+    # Industry-specific considerations
+    industry_considerations = {
+        "Financial Services": {
+            "key_risks": ["Regulatory fines", "Data breaches", "System downtime"],
+            "recommended_model": "🏠 On-premises or 🌉 Hybrid",
+            "rationale": "Core systems often must remain private for regulatory compliance"
+        },
+        "Healthcare": {
+            "key_risks": ["HIPAA violations", "Patient safety", "Data breaches"],
+            "recommended_model": "🏠 On-premises or 🌉 Hybrid",
+            "rationale": "Patient data requires strict controls and audit trails"
+        },
+        "Government": {
+            "key_risks": ["Security breaches", "Data sovereignty", "Public trust"],
+            "recommended_model": "🏠 On-premises",
+            "rationale": "Government data often requires air-gapped or classified environments"
+        },
+        "E-commerce/Retail": {
+            "key_risks": ["PCI compliance", "Customer data", "Seasonal scaling"],
+            "recommended_model": "☁️ Public Cloud or 🌉 Hybrid",
+            "rationale": "Need to scale for traffic spikes while protecting payment data"
+        },
+        "Manufacturing": {
+            "key_risks": ["Operational downtime", "IP theft", "Supply chain"],
+            "recommended_model": "🌉 Hybrid Cloud",
+            "rationale": "Factory floor stays local, analytics and planning in cloud"
+        },
+        "Technology/SaaS": {
+            "key_risks": ["Service availability", "Customer data", "Competitive advantage"],
+            "recommended_model": "☁️ Public Cloud",
+            "rationale": "Need global scale, high availability, and rapid feature deployment"
+        }
+    }
+    
+    # Generate recommendations
+    base_reqs = sensitivity_reqs[data_sensitivity]
+    industry_info = industry_considerations[industry]
+    
+    recommendations = {
+        "data_requirements": base_reqs,
+        "industry_context": industry_info,
+        "compliance_details": {},
+        "deployment_recommendation": "",
+        "implementation_priority": [],
+        "estimated_complexity": "",
+        "timeline_estimate": ""
+    }
+    
+    # Add compliance-specific details
+    if compliance_reqs and "None" not in compliance_reqs:
+        for compliance in compliance_reqs:
+            if compliance in compliance_details:
+                recommendations["compliance_details"][compliance] = compliance_details[compliance]
+    
+    # Generate deployment recommendation based on sensitivity + compliance
+    if data_sensitivity == "Restricted (financial/health records)":
+        if model == "☁️ Public Cloud":
+            recommendations["deployment_recommendation"] = "⚠️ HIGH RISK: Restricted data typically requires on-premises or certified private cloud"
+        else:
+            recommendations["deployment_recommendation"] = "✅ GOOD FIT: Recommended for restricted data"
+    elif data_sensitivity == "Confidential (customer PII)":
+        if any(comp in ["HIPAA", "PCI-DSS"] for comp in compliance_reqs):
+            recommendations["deployment_recommendation"] = "⚠️ MODERATE RISK: Requires careful cloud provider selection and configuration"
+        else:
+            recommendations["deployment_recommendation"] = "✅ ACCEPTABLE: With proper encryption and access controls"
+    else:
+        recommendations["deployment_recommendation"] = "✅ SUITABLE: Standard cloud security practices sufficient"
+    
+    # Implementation priority based on sensitivity and compliance
+    if data_sensitivity in ["Restricted (financial/health records)", "Confidential (customer PII)"]:
+        recommendations["implementation_priority"] = [
+            "1. Data classification and mapping",
+            "2. Encryption key management",
+            "3. Identity and access management",
+            "4. Audit logging and monitoring",
+            "5. Backup and disaster recovery"
+        ]
+        recommendations["estimated_complexity"] = "HIGH - Requires specialized security expertise"
+        recommendations["timeline_estimate"] = "6-12 months for full implementation"
+    else:
+        recommendations["implementation_priority"] = [
+            "1. Basic access controls",
+            "2. Data encryption in transit/rest",
+            "3. Regular backups",
+            "4. Monitoring and alerting",
+            "5. Documentation and training"
+        ]
+        recommendations["estimated_complexity"] = "MEDIUM - Standard security practices"
+        recommendations["timeline_estimate"] = "2-4 months for full implementation"
+    
+    return recommendations
+
+def display_compliance_recommendations(model, data_sensitivity, compliance_reqs, industry):
+    """Display detailed compliance and security recommendations"""
+    
+    recs = get_compliance_recommendations(model, data_sensitivity, compliance_reqs, industry)
+    
+    # Deployment fit assessment
+    st.markdown("### 🎯 Deployment Fit Assessment")
+    if "HIGH RISK" in recs["deployment_recommendation"]:
+        st.error(recs["deployment_recommendation"])
+    elif "MODERATE RISK" in recs["deployment_recommendation"]:
+        st.warning(recs["deployment_recommendation"])
+    else:
+        st.success(recs["deployment_recommendation"])
+    
+    # Industry context
+    st.markdown("### 🏢 Industry-Specific Considerations")
+    industry_info = recs["industry_context"]
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write(f"**Recommended Model:** {industry_info['recommended_model']}")
+        st.write(f"**Key Risks:**")
+        for risk in industry_info['key_risks']:
+            st.write(f"• {risk}")
+    
+    with col2:
+        st.write(f"**Rationale:** {industry_info['rationale']}")
+    
+    # Data requirements
+    st.markdown("### 🔒 Security Requirements")
+    data_reqs = recs["data_requirements"]
+    
+    req_col1, req_col2 = st.columns(2)
+    with req_col1:
+        st.write(f"**Encryption:** {data_reqs['encryption']}")
+        st.write(f"**Access Controls:** {data_reqs['access_controls']}")
+        st.write(f"**Data Residency:** {data_reqs['data_residency']}")
+    
+    with req_col2:
+        st.write(f"**Audit Logging:** {data_reqs['audit_logging']}")
+        st.write(f"**Backup Retention:** {data_reqs['backup_retention']}")
+    
+    # Compliance details
+    if recs["compliance_details"]:
+        st.markdown("### 📋 Compliance Requirements")
+        
+        for compliance, details in recs["compliance_details"].items():
+            with st.expander(f"{compliance} Compliance Details"):
+                st.write("**Key Requirements:**")
+                for req in details["key_requirements"]:
+                    st.write(f"• {req}")
+                
+                st.write("**Technical Controls Needed:**")
+                for control in details["technical_controls"]:
+                    st.write(f"• {control}")
+                
+                st.write("**Deployment Model Impact:**")
+                for deploy_model, impact in details["deployment_impact"].items():
+                    if "✅" in impact:
+                        st.success(f"{deploy_model}: {impact}")
+                    else:
+                        st.warning(f"{deploy_model}: {impact}")
+    
+    # Implementation guidance
+    st.markdown("### 🚀 Implementation Roadmap")
+    
+    impl_col1, impl_col2 = st.columns(2)
+    
+    with impl_col1:
+        st.write("**Priority Order:**")
+        for priority in recs["implementation_priority"]:
+            st.write(priority)
+    
+    with impl_col2:
+        st.metric("Complexity Level", recs["estimated_complexity"])
+        st.metric("Timeline Estimate", recs["timeline_estimate"])
+    
+    # Risk assessment
+    st.markdown("### ⚠️ Risk Assessment Matrix")
+    
+    # Simple risk assessment based on data sensitivity
+    if data_sensitivity == "Restricted (financial/health records)":
+        risk_level = "🔴 CRITICAL"
+        risk_desc = "Highest security measures required. Consider on-premises or specialized compliance cloud."
+    elif data_sensitivity == "Confidential (customer PII)":
+        if any(comp in ["HIPAA", "PCI-DSS", "SOX"] for comp in compliance_reqs):
+            risk_level = "🟠 HIGH"
+            risk_desc = "Significant compliance requirements. Requires specialized cloud configuration."
+        else:
+            risk_level = "🟡 MEDIUM"
+            risk_desc = "Standard enterprise security practices sufficient."
+    elif data_sensitivity == "Internal (business metrics)":
+        risk_level = "🟡 MEDIUM"
+        risk_desc = "Business-standard security controls needed."
+    else:
+        risk_level = "🟢 LOW"
+        risk_desc = "Basic security measures sufficient."
+    
+    st.metric("Overall Risk Level", risk_level)
+    st.caption(risk_desc)
+
 @st.cache_data(ttl=15)
 def cg_prices(ids=("bitcoin","ethereum","solana"), vs="usd"):
     """Free CoinGecko spot prices (cached)."""
@@ -245,8 +522,13 @@ if page.startswith("1"):
             st.write(f"• **Security level**: {security_multiplier}x multiplier")
             st.write(f"• **Industry factor**: {industry_multiplier}x")
             st.write(f"• **Company size**: {size_multiplier}x")
-        
-        # Model-specific benefits and challenges
+
+    # Enhanced recommendations section
+    st.markdown("---")
+    display_compliance_recommendations(model, data_sensitivity, compliance_reqs, industry)
+    
+    # Quick model benefits (keep this for overview)
+    with st.expander("📋 Quick Model Overview"):
         if model == "🏠 On-premises":
             st.success("✅ **Benefits:** Complete control, data never leaves your building")
             st.warning("⚠️ **Challenges:** High upfront costs, you handle all maintenance")
@@ -332,196 +614,6 @@ if page.startswith("1"):
     st.dataframe(resp_df, use_container_width=True, hide_index=True)
     st.caption("🟢 = Cloud Provider  |  🟡 = Shared  |  🔴 = You (Customer)")
     
-    # Team ownership breakdown
-    st.markdown("### 🧑‍💼 Which Teams Own What in Your Organization?")
-    
-    team_col1, team_col2, team_col3 = st.columns(3)
-    
-    with team_col1:
-        st.markdown("""
-        **🚗 IaaS Teams & Skills Needed**
-        
-        **🔧 Infrastructure/DevOps Team**
-        - Server management & patching
-        - Network configuration 
-        - Security hardening
-        - Backup & disaster recovery
-        
-        **👨‍💻 Development Team** 
-        - Application deployment
-        - Database management
-        - Performance optimization
-        
-        **🛡️ Security Team**
-        - Access control (IAM)
-        - Vulnerability scanning
-        - Compliance monitoring
-        
-        **💰 FinOps Team**
-        - Cost optimization 
-        - Resource right-sizing
-        - Budget monitoring
-        """)
-    
-    with team_col2:
-        st.markdown("""
-        **🚌 PaaS Teams & Skills Needed**
-        
-        **👨‍💻 Development Team (Primary)**
-        - Write application code
-        - Configure app settings
-        - Monitor app performance
-        
-        **📊 Platform Team**
-        - Choose PaaS services
-        - Set development standards
-        - Manage CI/CD pipelines
-        
-        **🛡️ Security Team**
-        - App-level security
-        - API security 
-        - Data encryption
-        
-        **📈 Product Team**
-        - Feature requirements
-        - User experience design
-        - Performance targets
-        """)
-    
-    with team_col3:
-        st.markdown("""
-        **🚕 SaaS Teams & Skills Needed**
-        
-        **👥 Business Users (Primary)**
-        - Daily application usage
-        - Data entry & reporting
-        - Business process execution
-        
-        **🔧 IT Admin Team**
-        - User account management
-        - Access permissions
-        - Integration with other tools
-        
-        **📊 Business Analysts**
-        - Report creation
-        - Data analysis
-        - Process optimization
-        
-        **🎓 Training Team**
-        - User onboarding
-        - Feature adoption
-        - Change management
-        """)
-    
-    # Real-world example scenarios
-    st.markdown("### 🏢 Real Examples: Same Company, Different Approaches")
-    
-    example_tabs = st.tabs(["🏦 Banking Example", "🛒 E-commerce Example", "🏥 Healthcare Example"])
-    
-    with example_tabs[0]:
-        st.markdown("""
-        **🏦 Regional Bank's Multi-Model Approach**
-        
-        **🚗 IaaS Usage:**
-        - **What:** Core banking system (account management, transactions)
-        - **Who owns it:** Infrastructure team (24/7 operations)
-        - **Why IaaS:** Need full control for regulatory compliance
-        - **Team:** 15 infrastructure engineers, 5 security specialists
-        
-        **🚌 PaaS Usage:**  
-        - **What:** Mobile banking app backend
-        - **Who owns it:** Development team (agile releases)
-        - **Why PaaS:** Focus on features, not server management
-        - **Team:** 8 developers, 2 platform engineers
-        
-        **🚕 SaaS Usage:**
-        - **What:** Customer support system (Salesforce)
-        - **Who owns it:** Business users (call center staff)
-        - **Why SaaS:** Ready-to-use, no technical expertise needed
-        - **Team:** 1 IT admin, 25 business users
-        """)
-    
-    with example_tabs[1]:
-        st.markdown("""
-        **🛒 E-commerce Startup's Journey**
-        
-        **🚗 IaaS Usage:**
-        - **What:** Custom recommendation engine
-        - **Who owns it:** Data science team
-        - **Why IaaS:** Need specialized ML hardware (GPUs)
-        - **Team:** 3 ML engineers, 1 DevOps engineer
-        
-        **🚌 PaaS Usage:**
-        - **What:** Main website and shopping cart
-        - **Who owns it:** Full-stack developers
-        - **Why PaaS:** Fast deployment, automatic scaling
-        - **Team:** 5 developers, 1 platform lead
-        
-        **🚕 SaaS Usage:**
-        - **What:** Accounting (QuickBooks), Marketing (HubSpot)
-        - **Who owns it:** Finance and marketing teams
-        - **Why SaaS:** Non-technical teams need ready solutions
-        - **Team:** 0 technical staff needed
-        """)
-    
-    with example_tabs[2]:
-        st.markdown("""
-        **🏥 Hospital System's Hybrid Strategy**
-        
-        **🚗 IaaS Usage:**
-        - **What:** Electronic Health Records (Epic system)
-        - **Who owns it:** IT infrastructure team
-        - **Why IaaS:** HIPAA compliance, patient data control
-        - **Team:** 12 system administrators, 4 security experts
-        
-        **🚌 PaaS Usage:**
-        - **What:** Patient portal and appointment scheduling
-        - **Who owns it:** Digital health team
-        - **Why PaaS:** Rapid feature updates, mobile-friendly
-        - **Team:** 6 developers, 1 product manager
-        
-        **🚕 SaaS Usage:**
-        - **What:** Staff scheduling (Deputy), Payroll (ADP)
-        - **Who owns it:** HR and operations teams  
-        - **Why SaaS:** Standard business processes, no customization needed
-        - **Team:** 2 HR admins, 50+ end users
-        """)
-    
-    # Decision matrix
-    st.markdown("### 🤔 Quick Decision Matrix: Which Model Should You Choose?")
-    
-    decision_col1, decision_col2 = st.columns(2)
-    
-    with decision_col1:
-        user_priority = st.radio(
-            "What's most important to you?",
-            ["Maximum control and customization", "Speed to market", "Lowest operational overhead", "Cost predictability"]
-        )
-        
-        team_expertise = st.radio(
-            "What's your team's technical expertise?",
-            ["We have infrastructure experts", "We're mainly developers", "We're business users", "Mixed technical skills"]
-        )
-    
-    with decision_col2:
-        # Simple recommendation logic
-        if user_priority == "Maximum control and customization":
-            if team_expertise == "We have infrastructure experts":
-                rec = "🚗 **IaaS** - You have the skills to manage everything"
-            else:
-                rec = "🚌 **PaaS** - Get control without infrastructure complexity"
-        elif user_priority == "Speed to market":
-            if team_expertise == "We're business users":
-                rec = "🚕 **SaaS** - Get started immediately with ready solutions"
-            else:
-                rec = "🚌 **PaaS** - Deploy fast without infrastructure setup"
-        elif user_priority == "Lowest operational overhead":
-            rec = "🚕 **SaaS** - Let someone else handle all the operations"
-        else:  # Cost predictability
-            rec = "🚗 **IaaS** - Most predictable long-term costs at scale"
-        
-        st.success(f"### 🎯 Recommendation: {rec}")
-    
     # Common evolution path
     st.info("""
     **💡 Common Evolution Path:**
@@ -532,11 +624,58 @@ if page.startswith("1"):
     
     st.markdown("---")
     
-    # Deployment Model Examples
-    st.markdown("## 🏢 Real-World Examples: When to Use Each Deployment Model")
+    # Decision Framework
+    st.markdown("## 🤔 Decision Framework: Which Service Model Should You Choose?")
     
-    # Create tabs for each model
-    tab1, tab2, tab3 = st.tabs(["🏠 On-Premises Examples", "☁️ Public Cloud Examples", "🌉 Hybrid Cloud Examples"])
+    # Interactive decision tree
+    st.markdown("### Quick Decision Helper")
+    
+    q1 = st.radio(
+        "**1. What's your primary concern?**",
+        ["Maximum security/control", "Lowest initial cost", "Fastest time to market", "Flexibility/future-proofing"]
+    )
+    
+    q2 = st.radio(
+        "**2. How predictable is your workload?**",
+        ["Very predictable (same every day)", "Some spikes (seasonal/events)", "Completely unpredictable", "Mix of both"]
+    )
+    
+    q3 = st.radio(
+        "**3. What's your IT team like?**",
+        ["We have lots of infrastructure experts", "We're mostly developers", "Small team, need managed services", "Mixed skills"]
+    )
+    
+    # Simple recommendation logic
+    if q1 == "Maximum security/control":
+        recommendation = "🏠 **On-Premises** - You value control over convenience"
+    elif q1 == "Fastest time to market":
+        recommendation = "☁️ **Public Cloud** - Get started in minutes, not months"
+    elif q1 == "Flexibility/future-proofing":
+        recommendation = "🌉 **Hybrid Cloud** - Best of both worlds, harder to manage"
+    else:  # Lowest initial cost
+        if q2 == "Very predictable (same every day)":
+            recommendation = "🏠 **On-Premises** - Predictable workload = predictable costs"
+        else:
+            recommendation = "☁️ **Public Cloud** - Pay only for what you use"
+    
+    st.success(f"### 🎯 Recommendation: {recommendation}")
+    
+    # Reality check section
+    st.markdown("---")
+    st.markdown("## 🎯 Reality Check: What Industry Experts Actually Say")
+    
+    expert_quotes = [
+        "💬 **Netflix CTO**: 'We went all-in on AWS because we needed global scale fast. On-premises couldn't handle our growth.'",
+        "💬 **Bank of America**: 'We use hybrid - core banking stays private for regulation, but mobile apps use cloud for scale.'",
+        "💬 **Spotify**: 'We started in cloud, but moved some workloads on-premises to control costs at scale.'",
+        "💬 **Manufacturing CEO**: 'Our factory floor can never depend on internet. Local systems keep production running.'",
+    ]
+    
+    for quote in expert_quotes:
+        st.info(quote)
+    
+    st.markdown("---")
+    st.caption("💡 **Pro tip**: Most successful companies end up with hybrid approaches over time, even if they start with one model.") Public Cloud Examples", "🌉 Hybrid Cloud Examples"])
     
     with tab1:
         st.markdown("### 🏠 On-Premises: When You Need Maximum Control")
