@@ -99,22 +99,11 @@ with fraud_col1:
                 with col2:
                     st.metric("Accuracy Rate", f"{accuracy:.0f}%") 
                     if accuracy > 80:
-                        st.success("🎯 High accuracy# app.py - Complete Enhanced Version with Compliance Recommendations
-import time, random, os
-import streamlit as st
-import pandas as pd
-import numpy as np
-import requests
-from sklearn.ensemble import IsolationForest
-import plotly.graph_objects as go
-
-st.set_page_config(page_title="Cloud • Fintech • Security • Data Platforms", layout="wide")
-
-# =========================
-# Utilities
-# =========================
-
-def get_compliance_recommendations(model, data_sensitivity, compliance_reqs, industry):
+                        st.success("🎯 High accuracy - few false alarms!")
+                    elif accuracy > 60:
+                        st.warning("⚠️ Some innocent customers get blocked")
+                    else:
+                        st.error("❌ Too many false alarms")
     """Generate specific recommendations based on compliance and data sensitivity"""
     
     # Base recommendations by data sensitivity
@@ -1364,162 +1353,142 @@ elif page.startswith("2"):
         
         fraud_col1, fraud_col2 = st.columns([1, 1])
         
-        with fraud_col1:
-            st.markdown("#### 🚨 Real-time Fraud Simulation")
+                with col2:
+                    st.metric("Accuracy Rate", f"{accuracy:.0f}%") 
+                    if accuracy > 80:
+                        st.success("🎯 High accuracy - few false alarms!")
+                    elif accuracy > 60:
+                        st.warning("⚠️ Some innocent customers get blocked")
+                    else:
+                        st.error("❌ Too many false alarms")
             
-            # Fraud injection controls
-            st.markdown("**Simulation Parameters:**")
-            fraud_rate = st.slider("Fraud Injection Rate (%)", 0.0, 10.0, 2.0, 0.1)
-            transaction_volume = st.slider("Transactions per Hour", 100, 10000, 1000, 100)
-            
-            # Fraud type selector
-            fraud_types = st.multiselect(
-                "Fraud Patterns to Simulate:",
-                ["Card Testing", "Account Takeover", "Synthetic Identity", "Velocity Abuse", "Geographical Anomaly"],
-                default=["Card Testing", "Velocity Abuse"]
-            )
-            
-            # Generate synthetic transaction data
-            np.random.seed(42)
-            n_transactions = min(transaction_volume, 1000)  # Limit for demo
-            
-            # Create synthetic transactions
-            transactions = []
-            for i in range(n_transactions):
-                is_fraud = np.random.random() < (fraud_rate / 100)
-                
-                transaction = {
-                    'amount': np.random.lognormal(3, 1) if not is_fraud else np.random.lognormal(5, 1.5),
-                    'hour': np.random.randint(0, 24),
-                    'merchant_category': np.random.choice(['retail', 'gas', 'restaurant', 'online', 'grocery']),
-                    'card_present': np.random.choice([0, 1], p=[0.3, 0.7]) if not is_fraud else 0,
-                    'is_fraud': is_fraud,
-                    'risk_score': np.random.uniform(0.8, 1.0) if is_fraud else np.random.uniform(0.0, 0.3)
-                }
-                transactions.append(transaction)
-            
-            df_transactions = pd.DataFrame(transactions)
-            
-            # Apply fraud detection model
-            fraud_detected = sum(df_transactions['risk_score'] > 0.5)
-            actual_fraud = sum(df_transactions['is_fraud'])
-            
-            # Display results
-            col_a, col_b, col_c = st.columns(3)
-            with col_a:
-                st.metric("Transactions", f"{len(df_transactions):,}")
-            with col_b:
-                st.metric("Fraud Detected", f"{fraud_detected}")
-            with col_c:
-                st.metric("Actual Fraud", f"{actual_fraud}")
-            
-            # Model performance metrics
-            if actual_fraud > 0 and fraud_detected > 0:
-                # Simplified performance calculation
-                precision = min(fraud_detected / max(fraud_detected, 1), 1.0)
-                recall = min(fraud_detected / actual_fraud, 1.0)
-                f1_score = 2 * (precision * recall) / max(precision + recall, 0.01)
-                
-                st.markdown("**Model Performance:**")
-                perf_col1, perf_col2, perf_col3 = st.columns(3)
-                with perf_col1:
-                    st.metric("Precision", f"{precision:.2f}")
-                with perf_col2:
-                    st.metric("Recall", f"{recall:.2f}")
-                with perf_col3:
-                    st.metric("F1 Score", f"{f1_score:.2f}")
+            # Simple explanation of what this means
+            st.markdown("**💡 What this means in real life:**")
+            if catch_rate > 80 and accuracy > 80:
+                st.success("✅ **Excellent**: This AI would save your bank millions while keeping customers happy")
+            elif catch_rate > 60:
+                st.warning("⚠️ **Good but**: Some fraud gets through, or too many good customers get blocked")
+            else:
+                st.error("❌ **Needs work**: Either missing fraud or annoying customers with false alarms")
         
         with fraud_col2:
-            st.markdown("#### 📊 Risk Distribution Analysis")
+            st.markdown("#### 📊 What Makes Transactions Look Suspicious?")
+            st.caption("*Understanding patterns helps improve fraud detection*")
             
-            # Risk score distribution
+            # Show risk score distribution in simple terms
             if len(df_transactions) > 0:
-                fig_risk_dist = go.Figure()
-                
-                # Legitimate transactions
+                # Risk score comparison
                 legit_scores = df_transactions[df_transactions['is_fraud'] == False]['risk_score']
                 fraud_scores = df_transactions[df_transactions['is_fraud'] == True]['risk_score']
                 
+                fig_risk_dist = go.Figure()
+                
+                # Show distribution of risk scores
                 fig_risk_dist.add_trace(go.Histogram(
                     x=legit_scores,
-                    name='Legitimate',
+                    name='Normal Transactions',
                     opacity=0.7,
-                    nbinsx=20
+                    nbinsx=20,
+                    marker_color='lightblue'
                 ))
                 
                 if len(fraud_scores) > 0:
                     fig_risk_dist.add_trace(go.Histogram(
                         x=fraud_scores,
-                        name='Fraudulent',
+                        name='Fraudulent Transactions',
                         opacity=0.7,
-                        nbinsx=20
+                        nbinsx=20,
+                        marker_color='red'
                     ))
                 
                 fig_risk_dist.update_layout(
-                    title="Risk Score Distribution",
-                    xaxis_title="Risk Score",
-                    yaxis_title="Count",
+                    title="AI Risk Scores: Normal vs Fraudulent",
+                    xaxis_title="Risk Score (0 = Safe, 1 = Very Suspicious)",
+                    yaxis_title="Number of Transactions",
                     barmode='overlay',
-                    height=300
+                    height=250
                 )
                 st.plotly_chart(fig_risk_dist, use_container_width=True)
                 
-                # Transaction amount analysis
+                st.markdown("**💡 Reading the chart:**")
+                st.write("• **Blue bars (left side)**: Normal transactions get low risk scores")
+                st.write("• **Red bars (right side)**: Fraudulent transactions get high risk scores") 
+                st.write("• **Good separation**: Means the AI can tell them apart!")
+                
+                # Transaction amount comparison
+                st.markdown("**💰 Do fraudsters spend differently?**")
+                
                 fig_amount = go.Figure()
                 
                 fig_amount.add_trace(go.Box(
                     y=df_transactions[df_transactions['is_fraud'] == False]['amount'],
-                    name='Legitimate',
-                    boxmean=True
+                    name='Normal Purchases',
+                    boxmean=True,
+                    marker_color='lightblue'
                 ))
                 
                 if len(df_transactions[df_transactions['is_fraud'] == True]) > 0:
                     fig_amount.add_trace(go.Box(
                         y=df_transactions[df_transactions['is_fraud'] == True]['amount'],
-                        name='Fraudulent',
-                        boxmean=True
+                        name='Fraudulent Purchases',
+                        boxmean=True,
+                        marker_color='red'
                     ))
                 
                 fig_amount.update_layout(
-                    title="Transaction Amount Distribution",
-                    yaxis_title="Amount ($)",
-                    height=250
+                    title="Spending Patterns: Normal vs Fraudulent",
+                    yaxis_title="Transaction Amount ($)",
+                    height=200
                 )
                 st.plotly_chart(fig_amount, use_container_width=True)
+                
+                st.write("💡 **Usually**: Fraudsters try to spend as much as possible before the card gets blocked")
             
-            # Fraud patterns analysis
-            st.markdown("**Fraud Pattern Insights:**")
+            # Explain fraud patterns in simple terms
+            st.markdown("**🕵️ Common Fraud Patterns:**")
             
             if fraud_types:
                 for pattern in fraud_types:
-                    if pattern == "Card Testing":
-                        st.write("🔍 **Card Testing**: Small amounts, high velocity, low success rate")
-                    elif pattern == "Account Takeover":
-                        st.write("🔍 **Account Takeover**: Geographic anomalies, device changes")
-                    elif pattern == "Synthetic Identity":
-                        st.write("🔍 **Synthetic Identity**: New accounts, perfect credit scores")
-                    elif pattern == "Velocity Abuse":
-                        st.write("🔍 **Velocity Abuse**: Rapid successive transactions")
-                    elif pattern == "Geographical Anomaly":
-                        st.write("🔍 **Geographic**: Impossible travel patterns")
+                    if "Card Testing" in pattern:
+                        st.write("🃏 **Card Testing**: Criminals try stolen card numbers with small purchases first")
+                    elif "Account Takeover" in pattern:
+                        st.write("👤 **Account Takeover**: Hacker logs into your account from a different location")
+                    elif "Fake Identity" in pattern:
+                        st.write("🤖 **Fake Identity**: Made-up person with perfect credit score (too good to be true)")
+                    elif "Too Many Transactions" in pattern:
+                        st.write("⚡ **Velocity Abuse**: Way more transactions than normal (card got stolen)")
+                    elif "Strange Location" in pattern:
+                        st.write("🌍 **Geographic**: Card used in different country than usual")
             
-            # Cost-benefit analysis
-            st.markdown("**Cost-Benefit Analysis:**")
-            avg_fraud_loss = 150  # Average fraud loss per incident
-            false_positive_cost = 5  # Cost per false positive
+            # Simple cost-benefit analysis
+            st.markdown("**💸 Business Impact Calculator:**")
             
-            prevented_loss = fraud_detected * avg_fraud_loss
-            friction_cost = (fraud_detected - actual_fraud) * false_positive_cost if fraud_detected > actual_fraud else 0
-            net_benefit = prevented_loss - friction_cost
+            # Simplified cost calculations with explanations
+            avg_fraud_loss = 150  # Average loss per fraud
+            false_positive_cost = 8   # Cost when you block a good customer
+            
+            prevented_loss = correctly_caught * avg_fraud_loss
+            missed_fraud_loss = (actual_fraud - correctly_caught) * avg_fraud_loss
+            customer_friction_cost = max(0, fraud_detected - correctly_caught) * false_positive_cost
+            net_benefit = prevented_loss - customer_friction_cost
             
             benefit_col1, benefit_col2 = st.columns(2)
             with benefit_col1:
-                st.metric("Prevented Loss", f"${prevented_loss:,.0f}")
-                st.metric("Net Benefit", f"${net_benefit:,.0f}")
+                st.metric("💰 Money Saved", f"${prevented_loss:,.0f}")
+                st.metric("💸 Money Lost to Fraud", f"${missed_fraud_loss:,.0f}")
             with benefit_col2:
-                st.metric("Friction Cost", f"${friction_cost:,.0f}")
-                roi = (net_benefit / max(friction_cost, 1)) * 100 if friction_cost > 0 else 999
-                st.metric("ROI", f"{roi:.0f}%")
+                st.metric("😤 Customer Frustration Cost", f"${customer_friction_cost:,.0f}")
+                st.metric("📈 Total Benefit", f"${net_benefit:,.0f}")
+            
+            # Simple business explanation
+            if net_benefit > 1000:
+                st.success("🎉 **Great ROI**: This fraud detection system pays for itself!")
+            elif net_benefit > 0:
+                st.warning("⚠️ **Decent**: Making money but could be optimized") 
+            else:
+                st.error("❌ **Problem**: Blocking too many good customers, losing money")
+                
+            st.caption("💡 **Real banks** process millions of transactions and save billions with AI fraud detection")
 
 # =========================
 # 3) Cybersecurity Lab
