@@ -774,10 +774,4 @@ if page.startswith("2"):
         else:
             st.info("Select at least two cryptocurrencies to view the correlation matrix.")
     else:
-        st.info("Please select at least one cryptocurrency to view market data.")
-
-# =========================
-# Old sections removed as requested by user
-# =========================
-# if page.startswith("3"): (Cybersecurity Lab) - REMOVED
-# if page.startswith("4"): (Data Platforms) - REMOVED
+        st.info("Please select at least one cryptocurrency to view market data.") 
