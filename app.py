@@ -346,7 +346,7 @@ if page == "👨 About":
     st.markdown("""
     # 👨‍💻 My Journey in Cloud & Crypto Technologies
     
-    Welcome to my interactive portfolio showcasing my educational journey and knowledge/experience 
+    Hello, I am Mao Jie aka M J. Welcome to my interactive portfolio showcasing my educational journey and knowledge/experience 
     in cloud architecture, fintech, and cryptocurrency technologies. This dashboard reflects my passion for gamification at the intersection of cloud computing and digital finance—have fun exploring the widgets, and I hope you learn something useful
     
     ## 🎓 Educational Foundation
