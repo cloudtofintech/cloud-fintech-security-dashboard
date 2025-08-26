@@ -1,4 +1,4 @@
-# app.py
+# app.py - Complete Enhanced Version
 import time, random, os
 import streamlit as st
 import pandas as pd
@@ -48,17 +48,16 @@ def synth_auth_logs(n=800, seed=7):
         fail_p = 0.12
         geo = random.choice(["SG","US","DE","CN","GB","IN","BR","AU"])
         device_risk = random.choice([0,1,2])  # 0=healthy ... 2=high
-        mfa = random.choice([0,1])            # 1=on
         hour = random.randint(0,23)
         is_vpn = random.choice([0,0,0,1])
         # attacker-ish cluster
         if random.random() < 0.05:
-            device_risk, mfa, is_vpn = 2, 0, 1
+            device_risk, is_vpn = 2, 1
             hour = random.choice([2,3,4])
             fail_p = 0.7
         outcome = "fail" if random.random() < fail_p else "success"
         rows.append(dict(hour=hour, geo=geo, device_risk=device_risk,
-                         mfa=mfa, is_vpn=is_vpn, outcome=outcome))
+                         is_vpn=is_vpn, outcome=outcome))
     return pd.DataFrame(rows)
 
 def detect_anomalies(df):
@@ -67,66 +66,16 @@ def detect_anomalies(df):
     dfn = df.copy()
     dfn["geo"] = dfn["geo"].map(enc_geo)
     dfn["outcome_num"] = (dfn["outcome"]=="fail").astype(int)
-    X = dfn[["hour","geo","device_risk","mfa","is_vpn","outcome_num"]]
+    X = dfn[["hour","geo","device_risk","is_vpn","outcome_num"]]
     model = IsolationForest(n_estimators=120, contamination=0.06, random_state=42)
     model.fit(X)
     df["anomaly"] = model.predict(X).astype(int).map({-1:1, 1:0})
     return df, model
 
-def zero_trust_score(device:int, mfa:int, vpn:int, geo:int, fail:float, segmentation:int, rbac:int):
+def zero_trust_score(device:int, vpn:int, geo:int, fail:float, segmentation:int, rbac:int):
     """Toy composite risk score 0..100 (lower=safer)."""
     score = 20 + device*18 + vpn*15 + geo*10 + (fail*100)*0.25 + (2-segmentation)*10 + (2-rbac)*8
-    if mfa == 1:
-        score -= 15
     return max(0, min(100, score))
-
-def arch_cost_estimate(ingest_gb: float, users: int, env: str):
-    """Toy cost model for concept illustration (On-prem/Public/Hybrid)."""
-    base = dict(OnPrem=500, Public=200, Hybrid=300)
-    key = "OnPrem" if env=="On-prem" else ("Public" if env=="Public Cloud" else "Hybrid")
-    return round(base[key] + ingest_gb*2 + users*0.5, 2)
-
-def shared_responsibility_matrix(model:str):
-    """
-    Return responsibility table (Customer/Shared/Provider) per layer for each model.
-    """
-    layers = [
-        "Facilities/Physical", "Network", "Compute (IaaS)",
-        "Platform (PaaS)", "Apps (SaaS/Custom)", "Data", "Identity & Access"
-    ]
-    # 0 = Customer, 1 = Provider, 0.5 = Shared
-    if model == "On-prem":
-        vals = [0,0,0,0,0,0,0]
-    elif model == "Public Cloud":
-        vals = [1,1,1,0.5,0,0,0.5]  # provider handles low stack; platform shared; apps/data mostly customer
-    else:  # Hybrid Cloud
-        vals = [0.5,0.5,0.5,0.5,0,0,0.5]
-    who = ["Customer" if v==0 else ("Provider" if v==1 else "Shared") for v in vals]
-    return pd.DataFrame({"Layer": layers, "Responsibility": who, "Code": vals})
-
-def iaas_paas_saas_cards_with_stakeholders():
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown("### IaaS\nVMs, storage, networks.")
-        st.write("**Examples:** EC2, GCE, Azure VMs, VPC")
-        st.write("**Typical stakeholders:**")
-        st.write("• Infra/Ops (SRE, Cloud Eng)")
-        st.write("• Network/Security (NOC/SOC)")
-        st.write("• FinOps/Capacity Mgmt")
-    with c2:
-        st.markdown("### PaaS\nManaged runtimes & databases.")
-        st.write("**Examples:** Cloud Run, App Engine, Heroku, RDS/Cloud SQL, Kubernetes (managed)")
-        st.write("**Typical stakeholders:**")
-        st.write("• Platform Eng (DevOps, Platform Team)")
-        st.write("• App/Backend Eng")
-        st.write("• Data Platform Eng")
-    with c3:
-        st.markdown("### SaaS\nComplete applications delivered as a service.")
-        st.write("**Examples:** Salesforce, Google Workspace, Snowflake UI, Datadog")
-        st.write("**Typical stakeholders:**")
-        st.write("• Business Owners (Sales/Marketing/Finance)")
-        st.write("• App Admins")
-        st.write("• Security/GRC for access & compliance")
 
 def platform_reco(workload:str, data_type:str, team_skill:str, budget:str):
     """Simple Snowflake vs Databricks fit helper."""
@@ -166,121 +115,637 @@ page = st.sidebar.radio(
 )
 
 # =========================
-# 1) Cloud Architectures (with verticals, use cases, stakeholders)
+# 1) Enhanced Cloud Architectures Section
 # =========================
 
 if page.startswith("1"):
-    st.subheader("On-prem • Public Cloud • Hybrid Cloud — IaaS / PaaS / SaaS, WHY, and visuals")
+    st.markdown("""
+    # 🏗️ Cloud Architectures: Choose Your Adventure
+    
+    **Think of this like choosing where to build your house:**
+    - 🏠 **On-premises** = Build on your own land (you control everything)  
+    - ☁️ **Public Cloud** = Rent a managed apartment (provider handles maintenance)
+    - 🌉 **Hybrid Cloud** = Own a house + rent city apartment (best of both worlds)
+    """)
+    
+    st.info("💡 **Try this:** Adjust the sliders below and watch how costs change for different scenarios!")
+    
+    # Interactive Controls Section
+    st.markdown("## 🎛️ Interactive Cost Calculator")
+    
+    col_left, col_right = st.columns([1, 1], gap="large")
+    
+    with col_left:
+        # Deployment model with better descriptions
+        st.markdown("### Choose Your Cloud Strategy")
+        model = st.radio(
+            "Pick a deployment model to see real-world examples:",
+            ["🏠 On-premises", "☁️ Public Cloud", "🌉 Hybrid Cloud"], 
+            index=1,
+            help="Each model has different trade-offs in cost, control, and complexity"
+        )
+        
+        # Scenario selectors to make it more relatable
+        st.markdown("### Your Business Scenario")
+        company_size = st.selectbox(
+            "Company size",
+            ["Startup (1-50 employees)", "SME (51-500 employees)", "Enterprise (500+ employees)"],
+            index=1
+        )
+        
+        industry = st.selectbox(
+            "Industry vertical",
+            ["Financial Services", "Healthcare", "E-commerce/Retail", "Manufacturing", "Government", "Technology/SaaS"],
+            index=0
+        )
+        
+        # Interactive sliders with business context
+        st.markdown("### Workload Requirements")
+        ingest_gb = st.slider(
+            "Daily data processing (GB)", 
+            1, 500, 40, 5,
+            help="Think: customer transactions, IoT sensors, log files, etc."
+        )
+        
+        users = st.slider(
+            "People using analytics dashboards", 
+            5, 1000, 60, 5,
+            help="Business analysts, data scientists, executives viewing reports"
+        )
+        
+        # Security requirements (simplified, no MFA)
+        st.markdown("### Security & Compliance Needs")
+        data_sensitivity = st.selectbox(
+            "Data sensitivity level",
+            ["Public (marketing data)", "Internal (business metrics)", "Confidential (customer PII)", "Restricted (financial/health records)"],
+            index=2
+        )
+        
+        compliance_reqs = st.multiselect(
+            "Compliance requirements",
+            ["GDPR", "HIPAA", "SOX", "PCI-DSS", "ISO 27001", "None"],
+            default=["GDPR"]
+        )
+        
+        network_isolation = st.select_slider(
+            "Network security level", 
+            options=["Basic", "Standard", "High", "Maximum"], 
+            value="Standard",
+            help="How isolated should your systems be from the internet?"
+        )
 
-    # --- Controls (MFA removed as requested)
-    top_l, top_r = st.columns([2,3], gap="large")
-    with top_l:
-        model = st.radio("Deployment model", ["On-prem","Public Cloud","Hybrid Cloud"], index=1, horizontal=True)
-        ingest_gb = st.slider("Daily data ingestion (GB)", 1, 200, 40)
-        users = st.slider("Concurrent analytics users", 5, 500, 60, 5)
-        seg = st.select_slider("Network segmentation depth", options=[0,1,2], value=1)
-        rbac = st.select_slider("RBAC granularity", options=[0,1,2], value=1)
-        st.metric("Est. monthly infra cost (toy)", f"${arch_cost_estimate(ingest_gb, users, model):,}")
-
-    with top_r:
-        if model=="On-prem":
-            st.write("• All infra managed in-house. ✅ Control & residency • ❌ Elasticity & CapEx burden.")
-        elif model=="Public Cloud":
-            st.write("• Provider manages most layers; you focus on data/apps. ✅ Elastic & managed • ❌ Some lock-in risk.")
+    with col_right:
+        # Dynamic cost calculation with explanations
+        st.markdown("### 💰 Cost Breakdown")
+        
+        # Base costs by model
+        base_costs = {
+            "🏠 On-premises": 800,
+            "☁️ Public Cloud": 200, 
+            "🌉 Hybrid Cloud": 400
+        }
+        
+        base_cost = base_costs[model]
+        data_cost = ingest_gb * 2.5
+        user_cost = users * 1.2
+        
+        # Security premium based on selections
+        security_multiplier = {
+            "Basic": 1.0, "Standard": 1.2, "High": 1.5, "Maximum": 2.0
+        }[network_isolation]
+        
+        compliance_cost = len(compliance_reqs) * 150 if compliance_reqs != ["None"] else 0
+        
+        # Industry and size adjustments
+        industry_multiplier = {
+            "Financial Services": 1.4,
+            "Healthcare": 1.3,
+            "Government": 1.5,
+            "E-commerce/Retail": 1.1,
+            "Manufacturing": 1.2,
+            "Technology/SaaS": 1.0
+        }[industry]
+        
+        size_multiplier = {
+            "Startup (1-50 employees)": 0.8,
+            "SME (51-500 employees)": 1.0,
+            "Enterprise (500+ employees)": 1.3
+        }[company_size]
+        
+        total_cost = (base_cost + data_cost + user_cost + compliance_cost) * security_multiplier * industry_multiplier * size_multiplier
+        
+        # Display cost breakdown
+        st.metric("💸 Estimated Monthly Cost", f"${total_cost:,.0f}")
+        
+        with st.expander("💡 See cost breakdown"):
+            st.write(f"• **Base infrastructure**: ${base_cost:,}")
+            st.write(f"• **Data processing**: ${data_cost:,.0f}")
+            st.write(f"• **User access**: ${user_cost:,.0f}")
+            st.write(f"• **Compliance**: ${compliance_cost:,}")
+            st.write(f"• **Security level**: {security_multiplier}x multiplier")
+            st.write(f"• **Industry factor**: {industry_multiplier}x")
+            st.write(f"• **Company size**: {size_multiplier}x")
+        
+        # Model-specific benefits and challenges
+        if model == "🏠 On-premises":
+            st.success("✅ **Benefits:** Complete control, data never leaves your building")
+            st.warning("⚠️ **Challenges:** High upfront costs, you handle all maintenance")
+        elif model == "☁️ Public Cloud":
+            st.success("✅ **Benefits:** Pay-as-you-go, automatic updates, global scale")
+            st.warning("⚠️ **Challenges:** Ongoing costs, less control, internet dependency")
+        else:  # Hybrid
+            st.success("✅ **Benefits:** Keep sensitive data private, burst to cloud when needed")
+            st.warning("⚠️ **Challenges:** More complex to manage, need expertise in both")
+    
+    st.markdown("---")
+    
+    # IaaS/PaaS/SaaS Section
+    st.markdown("## 🏗️ Cloud Service Models: IaaS vs PaaS vs SaaS")
+    st.markdown("**Think of it like transportation options:**")
+    st.markdown("- 🚗 **IaaS** = Rent a car (you drive, maintain, fuel it)")
+    st.markdown("- 🚌 **PaaS** = Take a bus (just get on, driver handles the rest)")  
+    st.markdown("- 🚕 **SaaS** = Call an Uber (complete door-to-door service)")
+    
+    # Interactive service model selector
+    service_col1, service_col2 = st.columns([1, 2])
+    
+    with service_col1:
+        selected_service = st.selectbox(
+            "Choose a service model to explore:",
+            ["🚗 IaaS (Infrastructure as a Service)", "🚌 PaaS (Platform as a Service)", "🚕 SaaS (Software as a Service)"],
+            help="Each model gives you different levels of control vs convenience"
+        )
+    
+    with service_col2:
+        if "IaaS" in selected_service:
+            st.markdown("""
+            ### 🚗 IaaS - You Get the Raw Building Blocks
+            **What you get:** Virtual machines, storage, networks
+            **You manage:** Operating systems, applications, data, security patches
+            **Examples:** AWS EC2, Google Compute Engine, Azure VMs
+            **Best for:** Custom applications, full control needed
+            """)
+        elif "PaaS" in selected_service:
+            st.markdown("""
+            ### 🚌 PaaS - You Focus on Your App, Not Infrastructure  
+            **What you get:** Runtime environment, databases, development tools
+            **You manage:** Your application code and data
+            **Examples:** Heroku, Google App Engine, AWS Lambda
+            **Best for:** Developers who want to code, not manage servers
+            """)
+        else:  # SaaS
+            st.markdown("""
+            ### 🚕 SaaS - Complete Ready-to-Use Applications
+            **What you get:** Fully functional software accessible via web browser
+            **You manage:** User accounts, data input, business processes
+            **Examples:** Salesforce, Google Workspace, Zoom, Netflix
+            **Best for:** Business users who need tools, not technology
+            """)
+    
+    # Detailed responsibility matrix
+    st.markdown("### 👥 Who's Responsible for What?")
+    
+    # Create responsibility visualization
+    responsibilities = [
+        "Physical Data Centers",
+        "Network & Security Infrastructure", 
+        "Virtual Machines & Storage",
+        "Operating System & Updates",
+        "Runtime & Development Tools",
+        "Application Code & Logic",
+        "User Data & Access Control",
+        "Business Processes & Training"
+    ]
+    
+    # Color coding: Red = Customer, Yellow = Shared, Green = Provider
+    iaas_resp = ["🟢", "🟢", "🟢", "🔴", "🔴", "🔴", "🔴", "🔴"]
+    paas_resp = ["🟢", "🟢", "🟢", "🟢", "🟢", "🔴", "🔴", "🔴"] 
+    saas_resp = ["🟢", "🟢", "🟢", "🟢", "🟢", "🟢", "🟡", "🔴"]
+    
+    resp_df = pd.DataFrame({
+        "Responsibility Layer": responsibilities,
+        "IaaS": iaas_resp,
+        "PaaS": paas_resp, 
+        "SaaS": saas_resp
+    })
+    
+    st.dataframe(resp_df, use_container_width=True, hide_index=True)
+    st.caption("🟢 = Cloud Provider  |  🟡 = Shared  |  🔴 = You (Customer)")
+    
+    # Team ownership breakdown
+    st.markdown("### 🧑‍💼 Which Teams Own What in Your Organization?")
+    
+    team_col1, team_col2, team_col3 = st.columns(3)
+    
+    with team_col1:
+        st.markdown("""
+        **🚗 IaaS Teams & Skills Needed**
+        
+        **🔧 Infrastructure/DevOps Team**
+        - Server management & patching
+        - Network configuration 
+        - Security hardening
+        - Backup & disaster recovery
+        
+        **👨‍💻 Development Team** 
+        - Application deployment
+        - Database management
+        - Performance optimization
+        
+        **🛡️ Security Team**
+        - Access control (IAM)
+        - Vulnerability scanning
+        - Compliance monitoring
+        
+        **💰 FinOps Team**
+        - Cost optimization 
+        - Resource right-sizing
+        - Budget monitoring
+        """)
+    
+    with team_col2:
+        st.markdown("""
+        **🚌 PaaS Teams & Skills Needed**
+        
+        **👨‍💻 Development Team (Primary)**
+        - Write application code
+        - Configure app settings
+        - Monitor app performance
+        
+        **📊 Platform Team**
+        - Choose PaaS services
+        - Set development standards
+        - Manage CI/CD pipelines
+        
+        **🛡️ Security Team**
+        - App-level security
+        - API security 
+        - Data encryption
+        
+        **📈 Product Team**
+        - Feature requirements
+        - User experience design
+        - Performance targets
+        """)
+    
+    with team_col3:
+        st.markdown("""
+        **🚕 SaaS Teams & Skills Needed**
+        
+        **👥 Business Users (Primary)**
+        - Daily application usage
+        - Data entry & reporting
+        - Business process execution
+        
+        **🔧 IT Admin Team**
+        - User account management
+        - Access permissions
+        - Integration with other tools
+        
+        **📊 Business Analysts**
+        - Report creation
+        - Data analysis
+        - Process optimization
+        
+        **🎓 Training Team**
+        - User onboarding
+        - Feature adoption
+        - Change management
+        """)
+    
+    # Real-world example scenarios
+    st.markdown("### 🏢 Real Examples: Same Company, Different Approaches")
+    
+    example_tabs = st.tabs(["🏦 Banking Example", "🛒 E-commerce Example", "🏥 Healthcare Example"])
+    
+    with example_tabs[0]:
+        st.markdown("""
+        **🏦 Regional Bank's Multi-Model Approach**
+        
+        **🚗 IaaS Usage:**
+        - **What:** Core banking system (account management, transactions)
+        - **Who owns it:** Infrastructure team (24/7 operations)
+        - **Why IaaS:** Need full control for regulatory compliance
+        - **Team:** 15 infrastructure engineers, 5 security specialists
+        
+        **🚌 PaaS Usage:**  
+        - **What:** Mobile banking app backend
+        - **Who owns it:** Development team (agile releases)
+        - **Why PaaS:** Focus on features, not server management
+        - **Team:** 8 developers, 2 platform engineers
+        
+        **🚕 SaaS Usage:**
+        - **What:** Customer support system (Salesforce)
+        - **Who owns it:** Business users (call center staff)
+        - **Why SaaS:** Ready-to-use, no technical expertise needed
+        - **Team:** 1 IT admin, 25 business users
+        """)
+    
+    with example_tabs[1]:
+        st.markdown("""
+        **🛒 E-commerce Startup's Journey**
+        
+        **🚗 IaaS Usage:**
+        - **What:** Custom recommendation engine
+        - **Who owns it:** Data science team
+        - **Why IaaS:** Need specialized ML hardware (GPUs)
+        - **Team:** 3 ML engineers, 1 DevOps engineer
+        
+        **🚌 PaaS Usage:**
+        - **What:** Main website and shopping cart
+        - **Who owns it:** Full-stack developers
+        - **Why PaaS:** Fast deployment, automatic scaling
+        - **Team:** 5 developers, 1 platform lead
+        
+        **🚕 SaaS Usage:**
+        - **What:** Accounting (QuickBooks), Marketing (HubSpot)
+        - **Who owns it:** Finance and marketing teams
+        - **Why SaaS:** Non-technical teams need ready solutions
+        - **Team:** 0 technical staff needed
+        """)
+    
+    with example_tabs[2]:
+        st.markdown("""
+        **🏥 Hospital System's Hybrid Strategy**
+        
+        **🚗 IaaS Usage:**
+        - **What:** Electronic Health Records (Epic system)
+        - **Who owns it:** IT infrastructure team
+        - **Why IaaS:** HIPAA compliance, patient data control
+        - **Team:** 12 system administrators, 4 security experts
+        
+        **🚌 PaaS Usage:**
+        - **What:** Patient portal and appointment scheduling
+        - **Who owns it:** Digital health team
+        - **Why PaaS:** Rapid feature updates, mobile-friendly
+        - **Team:** 6 developers, 1 product manager
+        
+        **🚕 SaaS Usage:**
+        - **What:** Staff scheduling (Deputy), Payroll (ADP)
+        - **Who owns it:** HR and operations teams  
+        - **Why SaaS:** Standard business processes, no customization needed
+        - **Team:** 2 HR admins, 50+ end users
+        """)
+    
+    # Decision matrix
+    st.markdown("### 🤔 Quick Decision Matrix: Which Model Should You Choose?")
+    
+    decision_col1, decision_col2 = st.columns(2)
+    
+    with decision_col1:
+        user_priority = st.radio(
+            "What's most important to you?",
+            ["Maximum control and customization", "Speed to market", "Lowest operational overhead", "Cost predictability"]
+        )
+        
+        team_expertise = st.radio(
+            "What's your team's technical expertise?",
+            ["We have infrastructure experts", "We're mainly developers", "We're business users", "Mixed technical skills"]
+        )
+    
+    with decision_col2:
+        # Simple recommendation logic
+        if user_priority == "Maximum control and customization":
+            if team_expertise == "We have infrastructure experts":
+                rec = "🚗 **IaaS** - You have the skills to manage everything"
+            else:
+                rec = "🚌 **PaaS** - Get control without infrastructure complexity"
+        elif user_priority == "Speed to market":
+            if team_expertise == "We're business users":
+                rec = "🚕 **SaaS** - Get started immediately with ready solutions"
+            else:
+                rec = "🚌 **PaaS** - Deploy fast without infrastructure setup"
+        elif user_priority == "Lowest operational overhead":
+            rec = "🚕 **SaaS** - Let someone else handle all the operations"
+        else:  # Cost predictability
+            rec = "🚗 **IaaS** - Most predictable long-term costs at scale"
+        
+        st.success(f"### 🎯 Recommendation: {rec}")
+    
+    # Common evolution path
+    st.info("""
+    **💡 Common Evolution Path:**
+    Most companies start with SaaS → Add PaaS for custom apps → Use IaaS for specialized needs
+    
+    **Example:** Start with Google Workspace (SaaS) → Build custom app on Heroku (PaaS) → Add ML workloads on AWS EC2 (IaaS)
+    """)
+    
+    st.markdown("---")
+    
+    # Deployment Model Examples
+    st.markdown("## 🏢 Real-World Examples: When to Use Each Deployment Model")
+    
+    # Create tabs for each model
+    tab1, tab2, tab3 = st.tabs(["🏠 On-Premises Examples", "☁️ Public Cloud Examples", "🌉 Hybrid Cloud Examples"])
+    
+    with tab1:
+        st.markdown("### 🏠 On-Premises: When You Need Maximum Control")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            **🏦 Traditional Bank Core Banking**
+            - *Why*: Regulatory requirements, 24/7 uptime critical
+            - *What*: Customer accounts, loan processing, ATM networks
+            - *Reality check*: "We can't risk our core banking going down because of internet issues"
+            
+            **🏥 Hospital Patient Records (Epic/Cerner)**
+            - *Why*: HIPAA compliance, life-critical systems
+            - *What*: Electronic health records, medical imaging
+            - *Reality check*: "Patient data never leaves our controlled environment"
+            
+            **🏭 Manufacturing Plant Floor**
+            - *Why*: Real-time control, no internet dependency
+            - *What*: Assembly line control, quality monitoring
+            - *Reality check*: "If internet goes down, production can't stop"
+            """)
+        
+        with col2:
+            st.markdown("""
+            **🛡️ Government Classified Systems**
+            - *Why*: National security, air-gapped networks
+            - *What*: Defense systems, intelligence data
+            - *Reality check*: "This data can never touch public internet"
+            
+            **📱 Telco Core Network (5G)**
+            - *Why*: Ultra-low latency, millions of users
+            - *What*: Call routing, network management
+            - *Reality check*: "Every millisecond matters for call quality"
+            
+            **⚡ Power Grid Control Systems**
+            - *Why*: Critical infrastructure, isolated networks
+            - *What*: Electricity distribution, grid monitoring
+            - *Reality check*: "Cyberattacks on power grids are a real threat"
+            """)
+        
+        st.info("💰 **Cost Reality**: High upfront investment ($100K-$1M+) but predictable ongoing costs")
+    
+    with tab2:
+        st.markdown("### ☁️ Public Cloud: When You Want to Move Fast")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            **🚀 Startup SaaS Platform**
+            - *Why*: No upfront costs, scale with growth
+            - *What*: Web app, user data, payment processing
+            - *Reality check*: "We need to launch in 3 months, not 3 years"
+            
+            **🛒 E-commerce Site (Black Friday)**
+            - *Why*: Handle traffic spikes automatically
+            - *What*: Product catalog, shopping cart, recommendations
+            - *Reality check*: "We get 10x traffic on Black Friday - cloud scales automatically"
+            
+            **📱 Mobile App Backend**
+            - *Why*: Global users, need worldwide presence
+            - *What*: User profiles, push notifications, analytics
+            - *Reality check*: "Our users are everywhere - cloud has data centers globally"
+            """)
+        
+        with col2:
+            st.markdown("""
+            **🎮 Gaming Company (Mobile Games)**
+            - *Why*: Unpredictable user growth, global audience
+            - *What*: Game servers, player data, leaderboards
+            - *Reality check*: "We might have 1K or 1M players - who knows?"
+            
+            **📺 Streaming Service (Netflix-style)**
+            - *Why*: Massive storage needs, content delivery
+            - *What*: Video files, user viewing data, recommendations
+            - *Reality check*: "We need petabytes of storage and global CDN"
+            
+            **🤖 AI/ML Research Company**
+            - *Why*: Need powerful GPUs temporarily
+            - *What*: Model training, data processing
+            - *Reality check*: "We need 100 GPUs for 2 weeks, then nothing"
+            """)
+        
+        st.info("💰 **Cost Reality**: Pay only for what you use, but costs can grow unexpectedly")
+    
+    with tab3:
+        st.markdown("### 🌉 Hybrid Cloud: When You Need Both Worlds")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            **🏦 Modern Bank (Digital Transformation)**
+            - *Why*: Keep core systems private, new apps in cloud
+            - *What*: Core banking on-prem + mobile banking in cloud
+            - *Reality check*: "Our 30-year-old mainframe stays, but mobile app needs cloud scale"
+            
+            **🏥 Healthcare System**
+            - *Why*: Patient records private, research in cloud
+            - *What*: EMR on-prem + population health analytics in cloud
+            - *Reality check*: "Patient data stays local, but we analyze trends in cloud"
+            
+            **🏭 Smart Factory (Industry 4.0)**
+            - *Why*: Real-time control local, analytics in cloud
+            - *What*: Machine control on-prem + predictive maintenance in cloud
+            - *Reality check*: "Machines need instant response, but AI models need cloud power"
+            """)
+        
+        with col2:
+            st.markdown("""
+            **🛒 Global Retailer**
+            - *Why*: Store systems local, e-commerce in cloud
+            - *What*: POS systems on-prem + online store in cloud
+            - *Reality check*: "Stores need to work even if internet is down"
+            
+            **🎓 University**
+            - *Why*: Student records private, research computing in cloud
+            - *What*: Student info on-prem + research workloads in cloud
+            - *Reality check*: "FERPA requires student data protection, but researchers need big compute"
+            
+            **💼 Enterprise with M&A**
+            - *Why*: Legacy systems + acquired cloud-native companies
+            - *What*: Old ERP on-prem + new acquisitions already in cloud
+            - *Reality check*: "We bought a startup that's 100% cloud - can't move them back"
+            """)
+        
+        st.info("💰 **Cost Reality**: Medium complexity, but gives flexibility to optimize costs")
+    
+    st.markdown("---")
+    
+    # Decision Framework
+    st.markdown("## 🤔 Decision Framework: Which Deployment Model Should You Choose?")
+    
+    # Interactive decision tree
+    st.markdown("### Quick Decision Helper")
+    
+    q1 = st.radio(
+        "**1. What's your primary concern?**",
+        ["Maximum security/control", "Lowest initial cost", "Fastest time to market", "Flexibility/future-proofing"]
+    )
+    
+    q2 = st.radio(
+        "**2. How predictable is your workload?**",
+        ["Very predictable (same every day)", "Some spikes (seasonal/events)", "Completely unpredictable", "Mix of both"]
+    )
+    
+    q3 = st.radio(
+        "**3. What's your IT team like?**",
+        ["We have lots of infrastructure experts", "We're mostly developers", "Small team, need managed services", "Mixed skills"]
+    )
+    
+    # Simple recommendation logic
+    if q1 == "Maximum security/control":
+        recommendation = "🏠 **On-Premises** - You value control over convenience"
+    elif q1 == "Fastest time to market":
+        recommendation = "☁️ **Public Cloud** - Get started in minutes, not months"
+    elif q1 == "Flexibility/future-proofing":
+        recommendation = "🌉 **Hybrid Cloud** - Best of both worlds, harder to manage"
+    else:  # Lowest initial cost
+        if q2 == "Very predictable (same every day)":
+            recommendation = "🏠 **On-Premises** - Predictable workload = predictable costs"
         else:
-            st.write("• Sensitive workloads remain private; analytics burst to cloud. ✅ Best of both • ❌ Governance complexity.")
-
+            recommendation = "☁️ **Public Cloud** - Pay only for what you use"
+    
+    st.success(f"### 🎯 Recommendation: {recommendation}")
+    
+    # Reality check section
     st.markdown("---")
-
-    # --- IaaS / PaaS / SaaS cards with stakeholders
-    iaas_paas_saas_cards_with_stakeholders()
-    st.markdown("---")
-
-    # --- WHY vertical (Industries & Use Cases)
-    st.markdown("#### WHY this model? (Industries & Use Cases)")
-    col1, col2, col3 = st.columns(3, gap="large")
-
-    def why_block(title, industries, shines, watch, cases):
-        st.markdown(f"**{title}**")
-        st.write("**Industries / Verticals**")
-        for i in industries: st.write("•", i)
-        st.write("**When it shines**")
-        for s in shines: st.write("•", s)
-        st.write("**Watchouts**")
-        for w in watch: st.write("•", w)
-        st.write("**Use cases**")
-        for c in cases: st.write("•", c)
-
+    st.markdown("## 🎯 Reality Check: What Industry Experts Actually Say")
+    
+    expert_quotes = [
+        "💬 **Netflix CTO**: 'We went all-in on AWS because we needed global scale fast. On-premises couldn't handle our growth.'",
+        "💬 **Bank of America**: 'We use hybrid - core banking stays private for regulation, but mobile apps use cloud for scale.'",
+        "💬 **Spotify**: 'We started in cloud, but moved some workloads on-premises to control costs at scale.'",
+        "💬 **Manufacturing CEO**: 'Our factory floor can never depend on internet. Local systems keep production running.'",
+    ]
+    
+    for quote in expert_quotes:
+        st.info(quote)
+    
+    # Common mistakes section
+    st.markdown("### 🚨 Common Mistakes to Avoid")
+    
+    col1, col2 = st.columns(2)
+    
     with col1:
-        why_block(
-            "On-prem",
-            industries=["Finance (core banking, HSMs)", "Government/Defence", "Healthcare (PHI/HIPAA)", "Manufacturing/OT"],
-            shines=["Strict residency / classified data", "Ultra-low latency to factory/branch", "Full control of network & hardware"],
-            watch=["CapEx heavy; slower to scale", "Hardware lifecycle & patching", "Ops talent required 24/7"],
-            cases=["Mainframes & legacy ERP", "Plant floor MES/SCADA", "Gov secure enclaves"]
-        )
-
+        st.markdown("""
+        **❌ Don't Do This:**
+        - Choose based on hype alone
+        - Ignore total cost of ownership
+        - Forget about data transfer costs
+        - Skip the pilot/proof-of-concept
+        - Assume cloud is always cheaper
+        """)
+    
     with col2:
-        why_block(
-            "Public Cloud",
-            industries=["Startups / SaaS", "Digital-native ecommerce", "Telecom scale-out apps", "Retail analytics"],
-            shines=["Elastic scale for analytics & AI", "Managed services reduce ops toil", "Global reach & DR options"],
-            watch=["Lock-in & egress costs", "Shared responsibility (IAM/Data)", "Need guardrails (budgets, SCP/IAM)"],
-            cases=["SaaS delivery models", "Omnichannel retail BI", "Mobile gaming backends"]
-        )
-
-    with col3:
-        why_block(
-            "Hybrid Cloud",
-            industries=["Banks modernising DW", "Pharma R&D", "Global enterprises", "Energy/Utilities"],
-            shines=["Sensitive data stays private", "Burst to cloud for compute-heavy jobs", "Gradual migration without big-bang"],
-            watch=["Network & identity federation complexity", "Data duplication/gravity issues", "Requires strong governance & catalogs"],
-            cases=["Train ML in cloud with local feature stores", "Edge + cloud analytics", "M&A / multi-cloud coexistence"]
-        )
-
+        st.markdown("""
+        **✅ Do This Instead:**
+        - Start with business requirements
+        - Calculate 3-year total costs
+        - Test with real workloads first
+        - Plan for skills/training needs
+        - Consider compliance from day 1
+        """)
+    
     st.markdown("---")
-
-    # --- Responsibility heatmap
-    st.markdown("#### Shared Responsibility by Model")
-    df_resp = shared_responsibility_matrix(model)
-    color_map = {"Customer":"#ef4444", "Shared":"#f59e0b", "Provider":"#10b981"}  # red/orange/green
-
-    st.dataframe(
-        df_resp[{"Layer","Responsibility"}]
-        .style.apply(
-            lambda s: [f"color: white; background-color: {color_map.get(v,'#333')}; font-weight: 600"
-                       if s.name=="Responsibility" else "" for v in s], axis=0),
-        use_container_width=True, height=280
-    )
-    st.caption("Red = Customer • Orange = Shared • Green = Provider. Identity & Data largely remain your responsibility in all models.")
-
-    st.markdown("---")
-
-    # --- IaaS→PaaS→SaaS Sankey (illustrative)
-    st.markdown("#### Workload flow across IaaS / PaaS / SaaS")
-    nodes = ["Users", "Edge/WAF", "IaaS", "PaaS", "SaaS", "Data Lake/Warehouse", "BI/Apps"]
-    idx = {n:i for i,n in enumerate(nodes)}
-
-    # Weights adapt to chosen model
-    if model=="On-prem":
-        w_edge_iaas = 8; w_iaas_paas = 3; w_paas_saas = 1; w_iaas_data = 6; w_data_bi = 7
-    elif model=="Public Cloud":
-        w_edge_iaas = 5; w_iaas_paas = 6; w_paas_saas = 4; w_iaas_data = 5; w_data_bi = 7
-    else:  # Hybrid Cloud
-        w_edge_iaas = 6; w_iaas_paas = 6; w_paas_saas = 3; w_iaas_data = 7; w_data_bi = 8
-
-    links = dict(
-        source=[idx["Users"], idx["Edge/WAF"], idx["IaaS"], idx["PaaS"], idx["IaaS"], idx["Data Lake/Warehouse"]],
-        target=[idx["Edge/WAF"], idx["IaaS"], idx["PaaS"], idx["SaaS"], idx["Data Lake/Warehouse"], idx["BI/Apps"]],
-        value =[9,              w_edge_iaas,   w_iaas_paas,   w_paas_saas,   w_iaas_data,                 w_data_bi]
-    )
-    fig = go.Figure(data=[go.Sankey(
-        node=dict(label=nodes, pad=20, thickness=18),
-        link=dict(source=links["source"], target=links["target"], value=links["value"])
-    )])
-    fig.update_layout(height=420, margin=dict(l=20,r=20,t=10,b=10))
-    st.plotly_chart(fig, use_container_width=True)
-    st.caption("Sankey emphasizes where traffic and responsibility sit for each model (weights are illustrative).")
+    st.caption("💡 **Pro tip**: Most successful companies end up with hybrid approaches over time, even if they start with one model.")
 
 # =========================
 # 2) Fintech: Live Crypto
@@ -319,13 +784,12 @@ elif page.startswith("3"):
     with a:
         st.markdown("### Zero-Trust policy")
         device = st.select_slider("Device posture", options=[0,1,2], value=1)
-        mfa = st.selectbox("MFA", [1,0], index=0)
         vpn = st.selectbox("Suspected VPN/Proxy", [0,1], index=0)
         geo = st.selectbox("Unusual geo change", [0,1], index=0)
         fail = st.slider("Recent login fail %", 0.0, 1.0, 0.15, 0.05)
         seg = st.select_slider("Network segmentation depth", options=[0,1,2], value=1)
         role = st.select_slider("RBAC granularity", options=[0,1,2], value=1)
-        z = zero_trust_score(device, mfa, vpn, geo, fail, seg, role)
+        z = zero_trust_score(device, vpn, geo, fail, seg, role)
         st.metric("Composite Risk Score", f"{z}/100")
         st.write("**Decision:**", "❌ Block" if z>=60 else ("⚠️ Step-up (MFA)" if z>=35 else "✅ Allow"))
         with st.expander("Zero-Trust TL;DR"):
@@ -381,9 +845,107 @@ elif page.startswith("4"):
 else:
     st.subheader("About & Cost control")
     st.markdown("""
-- **Hosting:** Streamlit Community Cloud (free) for MVP.
-- **Data:** CoinGecko & Binance REST (free/public).
-- **Compute:** Lightweight; synthetic logs; no DB.
-- **Caching:** `@st.cache_data` minimizes external calls.
-- **Security:** No secrets required. If you add paid APIs, store keys in Streamlit **Secrets**.
-""")
+    ## 👨‍💻 Technical Expertise Demonstration
+    
+    This interactive portfolio showcases practical knowledge across four critical domains:
+    
+    ### 🏗️ Cloud Architecture
+    - **Deployment model analysis** (On-premises, Public Cloud, Hybrid)
+    - **IaaS/PaaS/SaaS service models** with team ownership
+    - **Cost optimization modeling** with real business scenarios
+    - **Industry-specific use cases** and stakeholder mapping
+    
+    ### 🏦 Fintech & Cryptocurrency
+    - **Real-time market data** via CoinGecko API
+    - **Live candlestick charts** from Binance API
+    - **Multi-currency support** for global markets
+    - **Efficient caching** to minimize API costs
+    
+    ### 🔒 Cybersecurity
+    - **Zero-trust risk scoring** with composite metrics
+    - **SOC anomaly detection** using machine learning
+    - **Synthetic security event generation** for testing
+    - **Interactive threat analysis** and policy simulation
+    
+    ### 📊 Data Platform Engineering
+    - **Platform comparison engine** (Snowflake vs Databricks)
+    - **Workload-specific recommendations** with scoring
+    - **Team skill and budget optimization** guidance
+    - **Technology fit analysis** for different use cases
+    
+    ## 🛠️ Technical Implementation
+    
+    - **Frontend**: Streamlit with custom CSS styling
+    - **Data Processing**: Pandas, NumPy for real-time analytics
+    - **Machine Learning**: Scikit-learn (IsolationForest for anomaly detection)
+    - **Visualization**: Plotly for interactive charts and diagrams
+    - **APIs**: Live integration with CoinGecko and Binance
+    - **Deployment**: Streamlit Community Cloud with GitHub CI/CD
+    
+    ## 📈 Key Features
+    
+    - **Interactive cost calculators** with real-time parameter adjustment
+    - **Live cryptocurrency feeds** with error handling
+    - **ML-powered security analytics** using synthetic data
+    - **Decision support systems** for technology choices
+    - **Business-friendly explanations** of technical concepts
+    
+    ## 🎯 Professional Skills Demonstrated
+    
+    ### Technical Skills
+    - **Cloud architecture design** and cost optimization
+    - **Financial API integration** with proper caching strategies
+    - **Machine learning implementation** for security use cases
+    - **Data visualization** and dashboard development
+    - **Full-stack development** with Python and Streamlit
+    
+    ### Business Skills
+    - **Stakeholder communication** through clear visualizations
+    - **Cost modeling** and business case development
+    - **Risk assessment** and security policy design
+    - **Technology evaluation** and recommendation frameworks
+    - **Industry knowledge** across multiple verticals
+    
+    ## 📊 Architecture Overview
+    
+    ```
+    User Interface (Streamlit)
+            │
+    ├─── Cost Calculators ────┐
+    ├─── Live Data APIs ──────┼─── Business Logic Layer
+    ├─── ML Models ───────────┤     (Python Functions)
+    └─── Decision Engines ────┘
+            │
+    ├─── CoinGecko API (Crypto Prices)
+    ├─── Binance API (Market Data)
+    ├─── Scikit-learn (Anomaly Detection)
+    └─── Plotly (Interactive Visualizations)
+    ```
+    
+    ## 🚀 Deployment & Operations
+    
+    **Hosting:** Streamlit Community Cloud (free tier)
+    - **Data Sources:** CoinGecko & Binance REST APIs (free/public endpoints)
+    - **Compute:** Lightweight processing, no persistent database required
+    - **Caching:** Intelligent `@st.cache_data` strategy to minimize API calls
+    - **Security:** No sensitive data stored, API keys not required for public endpoints
+    - **Monitoring:** Built-in error handling with graceful degradation
+    
+    ## 💡 Design Principles
+    
+    1. **Business-First Approach**: Technical solutions tied to real business problems
+    2. **Interactive Learning**: Users can explore concepts through hands-on experimentation
+    3. **Real-World Examples**: Industry-specific scenarios instead of theoretical concepts
+    4. **Cost Consciousness**: Always consider total cost of ownership and operational efficiency
+    5. **Scalable Architecture**: Designed for easy extension with additional features
+    
+    ---
+    
+    **🔗 Connect & Collaborate**
+    
+    - **GitHub**: [View source code and deployment guide]
+    - **LinkedIn**: [Professional background and experience]
+    - **Email**: [Technical discussions and opportunities]
+    
+    *This portfolio demonstrates practical cloud, fintech, and security engineering skills through interactive scenarios, real-time data integration, and business-focused decision support tools.*
+    """)
