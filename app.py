@@ -214,4 +214,20 @@ elif page.startswith("4"):
     with r:
         c1, c2 = st.columns(2)
         with c1:
-            st.write("**Snowflake strength**")
+            st.write("**Snowflake strengths**")
+            for b in bullets["Snowflake"]: st.write("•", b)
+        with c2:
+            st.write("**Databricks strengths**")
+            for b in bullets["Databricks"]: st.write("•", b)
+        st.caption("Illustrative only. For production, confirm SKU/feature availability in your region and date.")
+
+# ---------------- About
+else:
+    st.subheader("About & Cost control")
+    st.markdown("""
+- **Hosting:** Streamlit Community Cloud (free) for MVP.
+- **Data:** CoinGecko & Binance REST (free/public).
+- **Compute:** Lightweight; synthetic logs; no DB.
+- **Caching:** `@st.cache_data` minimizes external calls.
+- **Security:** No secrets required; add Streamlit Secrets if you later use paid APIs.
+""")
