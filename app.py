@@ -1,99 +1,4 @@
-elif user_priority == "Lowest operational overhead":
-            rec = "🚕 **SaaS** - Let someone else handle all the operations"
-        else:  # Cost predictability
-            rec = "🚗 **IaaS** - Most predictable long-term costs at scale"
-        
-        st.success(f"### 🎯 Recommendation: {rec}")
-    
-    # Common evolution path
-    st.info("""
-    **💡 Common Evolution Path:**
-    Most companies start with SaaS → Add PaaS for custom apps → Use IaaS for specialized needs
-    
-    **Example:** Start with Google Workspace (SaaS) → Build custom app on Heroku (PaaS) → Add ML workloads on AWS EC2 (IaaS)
-    """)
-    
-    st.markdown("---")
-    
-    # Decision Framework
-    st.markdown("## 🤔 Decision Framework: Which Service Model Should You Choose?")
-    
-    # Interactive decision tree
-    st.markdown("### Quick Decision Helper")
-    
-    q1 = st.radio(
-        "**1. What's your primary concern?**",
-        ["Maximum security/control", "Lowest initial cost", "Fastest time to market", "Flexibility/future-proofing"]
-    )
-    
-    q2 = st.radio(
-        "**2. How predictable is your workload?**",
-        ["Very predictable (same every day)", "Some spikes (seasonal/events)", "Completely unpredictable", "Mix of both"]
-    )
-    
-    q3 = st.radio(
-        "**3. What's your IT team like?**",
-        ["We have lots of infrastructure experts", "We're mostly developers", "Small team, need managed services", "Mixed skills"]
-    )
-    
-    # Simple recommendation logic for deployment models
-    if q1 == "Maximum security/control":
-        recommendation = "🏠 **On-Premises** - You value control over convenience"
-    elif q1 == "Fastest time to market":
-        recommendation = "☁️ **Public Cloud** - Get started in minutes, not months"
-    elif q1 == "Flexibility/future-proofing":
-        recommendation = "🌉 **Hybrid Cloud** - Best of both worlds, harder to manage"
-    else:  # Lowest initial cost
-        if q2 == "Very predictable (same every day)":
-            recommendation = "🏠 **On-Premises** - Predictable workload = predictable costs"
-        else:
-            recommendation = "☁️ **Public Cloud** - Pay only for what you use"
-    
-    st.success(f"### 🎯 Recommendation: {recommendation}")
-    
-    # Reality check section
-    st.markdown("---")
-    st.markdown("## 🎯 Reality Check: What Industry Experts Actually Say")
-    
-    expert_quotes = [
-        "💬 **Netflix CTO**: 'We went all-in on AWS because we needed global scale fast. On-premises couldn't handle our growth.'",
-        "💬 **Bank of America**: 'We use hybrid - core banking stays private for regulation, but mobile apps use cloud for scale.'",
-        "💬 **Spotify**: 'We started in cloud, but moved some workloads on-premises to control costs at scale.'",
-        "💬 **Manufacturing CEO**: 'Our factory floor can never depend on internet. Local systems keep production running.'",
-    ]
-    
-    for quote in expert_quotes:
-        st.info(quote)
-    
-    st.markdown("---")
-    st.caption("💡 **Pro tip**: Most successful companies end up with hybrid approaches over time, even if they start with one model.")
-
-# =========================
-# 2) Fintech: Live Crypto
-# =========================
-
-elif page.startswith("2"):
-    st.subheader("Real-time(ish) crypto — free/public APIs + caching")
-    left, right = st.columns([2,3], gap="large")
-    with left:
-        tokens = st.multiselect("Tokens", ["bitcoin","ethereum","solana","binancecoin","cardano","ripple"],
-                                ["bitcoin","ethereum","solana"])
-        if not tokens: tokens = ["bitcoin"]
-        vs = st.selectbox("Quote currency", ["usd","sgd","eur"], index=0)
-        try:
-            prices = cg_prices(tuple(tokens), vs=vs)
-            for t in tokens:
-                st.metric(t.upper(), f"{prices[t][vs]:,} {vs.upper()}")
-        except Exception as e:
-            st.error(f"Price source unavailable: {e}")
-        st.caption("Source: CoinGecko (free). Consider WebSockets later for tick updates.")
-    with right:
-        st.markdown("**BTC 1-minute close (last 60 mins)**")
-        try:
-            dfk = binance_klines("BTCUSDT", "1m", 60)
-            st.line_chart(dfk.set_index("t")["c"])
-        except Exception as e:
-            st.warning(f"Candle sourc# app.py - Complete Enhanced Version with Compliance Recommendations
+# app.py - Complete Enhanced Version with Compliance Recommendations
 import time, random, os
 import streamlit as st
 import pandas as pd
@@ -737,4 +642,275 @@ if page.startswith("1"):
                 rec = "🚕 **SaaS** - Get started immediately with ready solutions"
             else:
                 rec = "🚌 **PaaS** - Deploy fast without infrastructure setup"
-        elif user_priority == "Lowest operational
+        elif user_priority == "Lowest operational overhead":
+            rec = "🚕 **SaaS** - Let someone else handle all the operations"
+        else:  # Cost predictability
+            rec = "🚗 **IaaS** - Most predictable long-term costs at scale"
+        
+        st.success(f"### 🎯 Recommendation: {rec}")
+    
+    # Common evolution path
+    st.info("""
+    **💡 Common Evolution Path:**
+    Most companies start with SaaS → Add PaaS for custom apps → Use IaaS for specialized needs
+    
+    **Example:** Start with Google Workspace (SaaS) → Build custom app on Heroku (PaaS) → Add ML workloads on AWS EC2 (IaaS)
+    """)
+    
+    st.markdown("---")
+    
+    # Decision Framework
+    st.markdown("## 🤔 Decision Framework: Which Service Model Should You Choose?")
+    
+    # Interactive decision tree
+    st.markdown("### Quick Decision Helper")
+    
+    q1 = st.radio(
+        "**1. What's your primary concern?**",
+        ["Maximum security/control", "Lowest initial cost", "Fastest time to market", "Flexibility/future-proofing"]
+    )
+    
+    q2 = st.radio(
+        "**2. How predictable is your workload?**",
+        ["Very predictable (same every day)", "Some spikes (seasonal/events)", "Completely unpredictable", "Mix of both"]
+    )
+    
+    q3 = st.radio(
+        "**3. What's your IT team like?**",
+        ["We have lots of infrastructure experts", "We're mostly developers", "Small team, need managed services", "Mixed skills"]
+    )
+    
+    # Simple recommendation logic for deployment models
+    if q1 == "Maximum security/control":
+        recommendation = "🏠 **On-Premises** - You value control over convenience"
+    elif q1 == "Fastest time to market":
+        recommendation = "☁️ **Public Cloud** - Get started in minutes, not months"
+    elif q1 == "Flexibility/future-proofing":
+        recommendation = "🌉 **Hybrid Cloud** - Best of both worlds, harder to manage"
+    else:  # Lowest initial cost
+        if q2 == "Very predictable (same every day)":
+            recommendation = "🏠 **On-Premises** - Predictable workload = predictable costs"
+        else:
+            recommendation = "☁️ **Public Cloud** - Pay only for what you use"
+    
+    st.success(f"### 🎯 Recommendation: {recommendation}")
+    
+    # Reality check section
+    st.markdown("---")
+    st.markdown("## 🎯 Reality Check: What Industry Experts Actually Say")
+    
+    expert_quotes = [
+        "💬 **Netflix CTO**: 'We went all-in on AWS because we needed global scale fast. On-premises couldn't handle our growth.'",
+        "💬 **Bank of America**: 'We use hybrid - core banking stays private for regulation, but mobile apps use cloud for scale.'",
+        "💬 **Spotify**: 'We started in cloud, but moved some workloads on-premises to control costs at scale.'",
+        "💬 **Manufacturing CEO**: 'Our factory floor can never depend on internet. Local systems keep production running.'",
+    ]
+    
+    for quote in expert_quotes:
+        st.info(quote)
+    
+    st.markdown("---")
+    st.caption("💡 **Pro tip**: Most successful companies end up with hybrid approaches over time, even if they start with one model.")
+
+# =========================
+# 2) Fintech: Live Crypto
+# =========================
+
+elif page.startswith("2"):
+    st.subheader("Real-time(ish) crypto — free/public APIs + caching")
+    left, right = st.columns([2,3], gap="large")
+    with left:
+        tokens = st.multiselect("Tokens", ["bitcoin","ethereum","solana","binancecoin","cardano","ripple"],
+                                ["bitcoin","ethereum","solana"])
+        if not tokens: tokens = ["bitcoin"]
+        vs = st.selectbox("Quote currency", ["usd","sgd","eur"], index=0)
+        try:
+            prices = cg_prices(tuple(tokens), vs=vs)
+            for t in tokens:
+                st.metric(t.upper(), f"{prices[t][vs]:,} {vs.upper()}")
+        except Exception as e:
+            st.error(f"Price source unavailable: {e}")
+        st.caption("Source: CoinGecko (free). Consider WebSockets later for tick updates.")
+    with right:
+        st.markdown("**BTC 1-minute close (last 60 mins)**")
+        try:
+            dfk = binance_klines("BTCUSDT", "1m", 60)
+            st.line_chart(dfk.set_index("t")["c"])
+        except Exception as e:
+            st.warning(f"Candle source unavailable: {e}")
+
+# =========================
+# 3) Cybersecurity Lab
+# =========================
+
+elif page.startswith("3"):
+    st.subheader("Zero-Trust simulator + SOC mini anomaly detection")
+    a, b = st.columns(2, gap="large")
+    with a:
+        st.markdown("### Zero-Trust policy")
+        device = st.select_slider("Device posture", options=[0,1,2], value=1)
+        vpn = st.selectbox("Suspected VPN/Proxy", [0,1], index=0)
+        geo = st.selectbox("Unusual geo change", [0,1], index=0)
+        fail = st.slider("Recent login fail %", 0.0, 1.0, 0.15, 0.05)
+        seg = st.select_slider("Network segmentation depth", options=[0,1,2], value=1)
+        role = st.select_slider("RBAC granularity", options=[0,1,2], value=1)
+        z = zero_trust_score(device, vpn, geo, fail, seg, role)
+        st.metric("Composite Risk Score", f"{z}/100")
+        st.write("**Decision:**", "❌ Block" if z>=60 else ("⚠️ Step-up (MFA)" if z>=35 else "✅ Allow"))
+        with st.expander("Zero-Trust TL;DR"):
+            st.write("- Verify explicitly • Least privilege • Assume breach • Continuous evaluation")
+    with b:
+        st.markdown("### SOC mini — anomaly hunt (toy)")
+        n = st.slider("Log size", 200, 5000, 800, 100)
+        df = synth_auth_logs(n=n, seed=42)
+        df, model = detect_anomalies(df)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Anomaly Count", int(df["anomaly"].sum()))
+            agg = df.groupby(["geo","outcome"], as_index=False).size()
+            st.dataframe(agg, use_container_width=True, height=240)
+        with col2:
+            hourly = df.groupby(["hour","outcome"], as_index=False).size()
+            pivot = hourly.pivot(index="hour", columns="outcome", values="size").fillna(0)
+            st.bar_chart(pivot)
+        st.caption("Model: IsolationForest. Extend with IP reputation, device intel, and alerts to Slack/SIEM.")
+
+# =========================
+# 4) Data Platforms
+# =========================
+
+elif page.startswith("4"):
+    st.subheader("Snowflake vs Databricks — interactive fit helper")
+    l, r = st.columns([2,3], gap="large")
+    with l:
+        workload = st.selectbox("Primary workload", ["BI/Reporting","ELT/SQL analytics","Data Science/ML","Streaming/Batch ML","Lakehouse"])
+        data_type = st.selectbox("Dominant data type", ["Structured","Semi-structured","Unstructured","Streaming"])
+        team_skill = st.selectbox("Team skill bias", ["SQL-first","Python/Scala notebooks","ML engineering"])
+        budget = st.selectbox("Budget posture", ["Tight (pay for what you use)","Flexible"])
+        reco, s, d, bullets = platform_reco(workload, data_type, team_skill, budget)
+        st.metric("Recommendation", reco)
+        st.progress(min(1.0, s/6.0), text=f"Snowflake fit score: {s}")
+        st.progress(min(1.0, d/6.0), text=f"Databricks fit score: {d}")
+    with r:
+        c1, c2 = st.columns(2)
+        with c1:
+            st.write("**Snowflake strengths**")
+            for btxt in bullets["Snowflake"]:
+                st.write("•", btxt)
+        with c2:
+            st.write("**Databricks strengths**")
+            for btxt in bullets["Databricks"]:
+                st.write("•", btxt)
+        st.caption("Illustrative only. For production, confirm SKU/feature availability by region/date.")
+
+# =========================
+# About
+# =========================
+
+else:
+    st.subheader("About & Cost control")
+    st.markdown("""
+    ## 👨‍💻 Technical Expertise Demonstration
+    
+    This interactive portfolio showcases practical knowledge across four critical domains:
+    
+    ### 🏗️ Cloud Architecture
+    - **Deployment model analysis** (On-premises, Public Cloud, Hybrid)
+    - **IaaS/PaaS/SaaS service models** with compliance recommendations
+    - **Cost optimization modeling** with real business scenarios
+    - **Industry-specific security requirements** and risk assessment
+    
+    ### 🏦 Fintech & Cryptocurrency
+    - **Real-time market data** via CoinGecko API
+    - **Live candlestick charts** from Binance API
+    - **Multi-currency support** for global markets
+    - **Efficient caching** to minimize API costs
+    
+    ### 🔒 Cybersecurity
+    - **Zero-trust risk scoring** with composite metrics
+    - **SOC anomaly detection** using machine learning
+    - **Synthetic security event generation** for testing
+    - **Interactive threat analysis** and policy simulation
+    
+    ### 📊 Data Platform Engineering
+    - **Platform comparison engine** (Snowflake vs Databricks)
+    - **Workload-specific recommendations** with scoring
+    - **Team skill and budget optimization** guidance
+    - **Technology fit analysis** for different use cases
+    
+    ## 🛠️ Technical Implementation
+    
+    - **Frontend**: Streamlit with custom CSS styling
+    - **Data Processing**: Pandas, NumPy for real-time analytics
+    - **Machine Learning**: Scikit-learn (IsolationForest for anomaly detection)
+    - **Visualization**: Plotly for interactive charts and diagrams
+    - **APIs**: Live integration with CoinGecko and Binance
+    - **Deployment**: Streamlit Community Cloud with GitHub CI/CD
+    
+    ## 📈 Key Features
+    
+    - **Interactive cost calculators** with real-time parameter adjustment
+    - **Live cryptocurrency feeds** with error handling
+    - **ML-powered security analytics** using synthetic data
+    - **Compliance-aware recommendations** for deployment decisions
+    - **Business-friendly explanations** of technical concepts
+    
+    ## 🎯 Professional Skills Demonstrated
+    
+    ### Technical Skills
+    - **Cloud architecture design** and cost optimization
+    - **Financial API integration** with proper caching strategies
+    - **Machine learning implementation** for security use cases
+    - **Data visualization** and dashboard development
+    - **Full-stack development** with Python and Streamlit
+    
+    ### Business Skills
+    - **Stakeholder communication** through clear visualizations
+    - **Cost modeling** and business case development
+    - **Risk assessment** and security policy design
+    - **Compliance guidance** and regulatory understanding
+    - **Industry knowledge** across multiple verticals
+    
+    ## 📊 Architecture Overview
+    
+    ```
+    User Interface (Streamlit)
+            │
+    ├─── Cost Calculators ────┐
+    ├─── Live Data APIs ──────┼─── Business Logic Layer
+    ├─── ML Models ───────────┤     (Python Functions)
+    └─── Decision Engines ────┘
+            │
+    ├─── CoinGecko API (Crypto Prices)
+    ├─── Binance API (Market Data)
+    ├─── Scikit-learn (Anomaly Detection)
+    └─── Plotly (Interactive Visualizations)
+    ```
+    
+    ## 🚀 Deployment & Operations
+    
+    **Hosting:** Streamlit Community Cloud (free tier)
+    - **Data Sources:** CoinGecko & Binance REST APIs (free/public endpoints)
+    - **Compute:** Lightweight processing, no persistent database required
+    - **Caching:** Intelligent `@st.cache_data` strategy to minimize API calls
+    - **Security:** No sensitive data stored, API keys not required for public endpoints
+    - **Monitoring:** Built-in error handling with graceful degradation
+    
+    ## 💡 Design Principles
+    
+    1. **Business-First Approach**: Technical solutions tied to real business problems
+    2. **Interactive Learning**: Users can explore concepts through hands-on experimentation
+    3. **Compliance-Aware**: Security and regulatory requirements drive architectural decisions
+    4. **Cost Consciousness**: Always consider total cost of ownership and operational efficiency
+    5. **Scalable Architecture**: Designed for easy extension with additional features
+    
+    ---
+    
+    **🔗 Connect & Collaborate**
+    
+    - **GitHub**: [View source code and deployment guide]
+    - **LinkedIn**: [Professional background and experience]
+    - **Email**: [Technical discussions and opportunities]
+    
+    *This portfolio demonstrates practical cloud, fintech, and security engineering skills through interactive scenarios, real-time data integration, and business-focused decision support tools.*
+    """)
