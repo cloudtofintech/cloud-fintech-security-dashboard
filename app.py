@@ -263,8 +263,11 @@ def display_compliance_recommendations(model, data_sensitivity, compliance_reqs,
             st.write(priority)
     
     with impl_col2:
-        st.metric("Complexity Level", recs["estimated_complexity"])
-        st.metric("Timeline Estimate", recs["timeline_estimate"])
+        st.write("**Complexity Level:**")
+        st.write(f"**{recs['estimated_complexity']}**")
+        st.write("")  # Add space
+        st.write("**Timeline Estimate:**")
+        st.write(f"**{recs['timeline_estimate']}**")
     
     # Risk assessment
     st.markdown("### ⚠️ Risk Assessment Matrix")
@@ -287,7 +290,8 @@ def display_compliance_recommendations(model, data_sensitivity, compliance_reqs,
         risk_level = "🟢 LOW"
         risk_desc = "Basic security measures sufficient."
     
-    st.metric("Overall Risk Level", risk_level)
+    st.write("**Overall Risk Level:**")
+    st.write(f"**{risk_level}**")
     st.caption(risk_desc)
 
 @st.cache_data(ttl=15)
