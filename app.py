@@ -346,32 +346,17 @@ if page == "👨 About":
     st.markdown("""
     # 👨‍💻 My Journey in Cloud & Crypto Technologies
     
-    Welcome to my interactive portfolio showcasing my educational journey and hands-on experience 
-    in cloud architecture, fintech, and cryptocurrency technologies. This dashboard represents 
-    my passion for building secure, scalable, and innovative solutions at the intersection of 
-    cloud computing and digital finance.
+    Welcome to my interactive portfolio showcasing my educational journey and knowledge/experience 
+    in cloud architecture, fintech, and cryptocurrency technologies. This dashboard reflects my passion for gamification at the intersection of cloud computing and digital finance—have fun exploring the widgets, and I hope you learn something useful
     
     ## 🎓 Educational Foundation
     
     My journey began with a strong technical foundation in computer science, enhanced by 
     specialized certifications and continuous learning in:
-    - **Cloud Architecture** - AWS Solutions Architect, Azure Fundamentals
-    - **Financial Technology** - Blockchain fundamentals, DeFi protocols
-    - **Security Engineering** - Zero-trust architecture, compliance frameworks
+    - **Cloud** — GTM leader with hands-on cloud chops: drove ad-product launches (+30% market share in 6 months), built scalable enablement (−40% ramp time), and grew cloud developer ecosystems (community bootcamps, +30% engagement). Certified Google Cloud Digital Leader (2024) and AWS Cloud Practitioner (2025); tools include BigQuery, GCS, and Amazon S3.
+    - **Financial Technology** - Bridged academic expertise in Financial Technology & Analytics (SMU) with hands-on developer advocacy at Google Cloud, driving Web3 go-to-market strategies that scaled Layer-2 adoption, onboarded 20+ startups through hackathons and bootcamps, and delivered a 40% uplift in post-program Cloud activation across the Web3 developer ecosystem
+    - **Cybersecurity** - Applied advanced cybersecurity labwork in symmetric/asymmetric encryption, buffer overflow, password hashing, and penetration testing, aligning hands-on skills with industry frameworks such as NIST CSF and ISO 27001 to design secure-by-default fintech and Web3 solutions
     
-    ## 💼 Professional Experience
-    
-    ### Cloud Infrastructure & Architecture
-    - **Multi-cloud deployments** across AWS, Azure, and GCP
-    - **Cost optimization** achieving 40% reduction in cloud spend
-    - **Compliance implementation** for GDPR, SOX, and PCI-DSS
-    - **Infrastructure as Code** using Terraform and CloudFormation
-    
-    ### Cryptocurrency & Digital Assets
-    - **Real-time trading systems** processing millions in daily volume
-    - **Smart contract development** on Ethereum and Solana
-    - **DeFi protocol integration** for yield optimization
-    - **Risk management systems** for crypto portfolios
     
     ## 🚀 What This Dashboard Demonstrates
     
@@ -380,13 +365,6 @@ if page == "👨 About":
     - **Live market integration** with cryptocurrency APIs
     - **Cost modeling** and optimization strategies
     - **Security-first design** with compliance awareness
-    
-    ## 📈 Key Achievements
-    
-    - **Reduced infrastructure costs by 45%** through cloud optimization
-    - **Processed $10M+ in crypto transactions** with 99.9% uptime
-    - **Implemented compliance frameworks** for Fortune 500 clients
-    - **Built ML-powered analytics** reducing operational risks by 60%
     
     ---
     
